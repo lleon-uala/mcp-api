@@ -16,9 +16,9 @@ It uses the official OpenAPI spec from [https://docs.nullplatform.com/](https://
 
 ## 🧱 Installation
 
-Edit your file `~/Library/Application Support/Claude/claude_desktop_config.json`
+### Using npx
 
-and add the following
+Edit your file `~/Library/Application Support/Claude/claude_desktop_config.json` and add:
 
 ```json
 {
@@ -26,6 +26,46 @@ and add the following
     "mcp-openapi-proxy": {
       "command": "npx",
       "args": ["@nullplatform/mcp-api"],
+      "env": {
+        "NP_API_KEY": "<your apikey>"
+      }
+    }
+  }
+}
+```
+
+### 🐳 Using Docker
+
+Build the image:
+
+```bash
+docker build -t nullplatform-mcp-api .
+```
+
+Configure Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mcp-openapi-proxy": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "NP_API_KEY", "nullplatform-mcp-api"],
+      "env": {
+        "NP_API_KEY": "<your apikey>"
+      }
+    }
+  }
+}
+```
+
+Or for Claude Code CLI (`.mcp.json` in your project):
+
+```json
+{
+  "mcpServers": {
+    "mcp-openapi-proxy": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "NP_API_KEY", "nullplatform-mcp-api"],
       "env": {
         "NP_API_KEY": "<your apikey>"
       }

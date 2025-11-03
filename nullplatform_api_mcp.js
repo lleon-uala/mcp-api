@@ -46,17 +46,10 @@ export class NullplatformApiMcp  {
     }
 
     async init() {
-        const client = await Swagger(this.openApiUrl);
+        const response = await fetch(this.openApiUrl);
+        const specJson = await response.json();
+        const client = await Swagger({spec: specJson});
         const spec = client.spec;
-        const requestOptions = {
-            requestInterceptor: async (req) => {
-                const token = await this.npToken.getToken();
-                if (token) {
-                    req.headers['Authorization'] = `Bearer ${token}`;
-                }
-                return req;
-            }
-        };
         for (const [path, methods] of Object.entries(spec.paths)) {
             for (const [method, operation] of Object.entries(methods)) {
                 if(!operation || !operation.operationId) {
@@ -77,12 +70,28 @@ export class NullplatformApiMcp  {
                     inputSchema: parametersParsed,
                     fn: async (args) => {
                         try {
+                            const token = await this.npToken.getToken();
 
-                            const res = await client.apis[tag][operation.operationId](args.parameters,{...requestOptions, requestBody: args.requestBody});
+                            const executeArgs = {
+                                operationId: operation.operationId,
+                                parameters: args.parameters || {},
+                                securities: {
+                                    authorized: {
+                                        bearerAuth: token
+                                    }
+                                }
+                            };
+
+                            if (args.requestBody) {
+                                executeArgs.requestBody = args.requestBody;
+                            }
+
+                            const response = await client.execute(executeArgs);
+
                             return {content: [
                                     {
                                         type: "text",
-                                        text: JSON.stringify(res.data)
+                                        text: JSON.stringify(response.body)
                                     }
                                 ]}
                         } catch (err) {
